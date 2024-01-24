@@ -73,6 +73,11 @@ while [[ $# -gt 0 ]]; do
             shift
             shift
             ;;
+        --model)
+            model="$2"
+            shift
+            shift
+            ;;
         --help)
             print_usage
             exit 0
@@ -152,34 +157,49 @@ printf "    Press Enter to continue ...\n\n"
 
 read
 
-printf "[+] The most popular models at https://huggingface.co/second-state:\n\n"
+vip_model_names=("yi-34b-chat")
+vip_model_urls=("https://huggingface.co/second-state/Yi-34B-Chat-GGUF")
+model=$(echo "$model" | tr '[:upper:]' '[:lower:]')
 
-is=0
-for r in "${repos[@]}"; do
-    printf "    %2d) %s\n" $is "$r"
-    is=$((is+1))
-done
-
-# ask for repo until index of sample repo is provided or an URL
-while [[ -z "$repo" ]]; do
-    printf "\n    Or choose one from: https://huggingface.co/models?sort=trending&search=gguf\n\n"
-    read -p "[+] Please select a number from the list above or enter an URL: " repo
-
-    # check if the input is a number
-    if [[ "$repo" =~ ^[0-9]+$ ]]; then
-        if [[ "$repo" -ge 0 && "$repo" -lt ${#repos[@]} ]]; then
-            repo="${repos[$repo]}"
-        else
-            printf "[-] Invalid repo index: %s\n" "$repo"
-            repo=""
-        fi
-    elif [[ "$repo" =~ ^https?:// ]]; then
-        repo="$repo"
-    else
-        printf "[-] Invalid repo URL: %s\n" "$repo"
-        repo=""
+for index in "${!vip_model_names[@]}"; do
+    if [ "$model" == "${vip_model_names[index]}" ]; then
+        vip_model_repo="${vip_model_urls[index]}"
+        break
     fi
 done
+
+if [ -n "$vip_model_repo" ]; then
+    repo="$vip_model_repo"
+else
+    printf "[+] The most popular models at https://huggingface.co/second-state:\n\n"
+
+    is=0
+    for r in "${repos[@]}"; do
+        printf "    %2d) %s\n" $is "$r"
+        is=$((is+1))
+    done
+
+    # ask for repo until index of sample repo is provided or an URL
+    while [[ -z "$repo" ]]; do
+        printf "\n    Or choose one from: https://huggingface.co/models?sort=trending&search=gguf\n\n"
+        read -p "[+] Please select a number from the list above or enter an URL: " repo
+
+        # check if the input is a number
+        if [[ "$repo" =~ ^[0-9]+$ ]]; then
+            if [[ "$repo" -ge 0 && "$repo" -lt ${#repos[@]} ]]; then
+                repo="${repos[$repo]}"
+            else
+                printf "[-] Invalid repo index: %s\n" "$repo"
+                repo=""
+            fi
+        elif [[ "$repo" =~ ^https?:// ]]; then
+            repo="$repo"
+        else
+            printf "[-] Invalid repo URL: %s\n" "$repo"
+            repo=""
+        fi
+    done
+fi
 
 # remove suffix
 repo=$(echo "$repo" | sed -E 's/\/tree\/main$//g')
